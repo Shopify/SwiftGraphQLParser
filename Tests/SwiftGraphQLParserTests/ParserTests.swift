@@ -56,6 +56,10 @@ class ParserTests: XCTestCase {
 			guard let parserError = error as? ParserError else { return XCTFail() }
 			XCTAssertEqual(parserError.type, .unterminatedSelectionSet)
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.startIndex ..< parserError.input.endIndex
+			)
 			XCTAssertEqual(parserError.line, 1)
 			XCTAssertEqual(parserError.column, 32)
 		}
@@ -71,6 +75,10 @@ class ParserTests: XCTestCase {
 			guard let parserError = error as? ParserError else { return XCTFail() }
 			XCTAssertEqual(parserError.type, .missingFragmentName)
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.range(of: "fragment {")
+			)
 			XCTAssertEqual(parserError.line, 1)
 			XCTAssertEqual(parserError.column, 9)
 		}
@@ -87,6 +95,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .missingTypeCondition)
 			XCTAssertEqual(parserError.errorRange, fragment.range(of: "fragment"))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.range(of: "fragment Fragment {")
+			)
 			XCTAssertEqual(parserError.line, 1)
 			XCTAssertEqual(parserError.column, 9)
 		}
@@ -101,6 +113,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .missingSelectionSet)
 			XCTAssertEqual(parserError.errorRange, fragment.range(of: "fragment"))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.startIndex ..< parserError.input.endIndex
+			)
 			XCTAssertEqual(parserError.line, 1)
 			XCTAssertEqual(parserError.column, 9)
 		}
@@ -129,6 +145,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .emptyVariableDefinitionList)
 			XCTAssertEqual(parserError.errorRange, query.range(of: "("))
 			XCTAssertEqual(parserError.input, query)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.range(of: "query CustomerList()")
+			)
 			XCTAssertEqual(parserError.line, 1)
 			XCTAssertEqual(parserError.column, 20)
 		}
@@ -145,6 +165,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .emptyArgumentList)
 			XCTAssertEqual(parserError.errorRange, fragment.range(of: "("))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.range(of: "fragment Fragment on Customer {\n    customers()")
+			)
 			XCTAssertEqual(parserError.line, 2)
 			XCTAssertEqual(parserError.column, 15)
 		}
@@ -161,6 +185,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .unterminatedArgumentList)
 			XCTAssertEqual(parserError.errorRange, fragment.range(of: "("))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.startIndex ..< parserError.input.endIndex
+			)
 			XCTAssertEqual(parserError.line, 2)
 			XCTAssertEqual(parserError.column, 15)
 		}
@@ -177,6 +205,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .missingArgumentValue)
 			XCTAssertEqual(parserError.errorRange, fragment.range(of: "first"))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.startIndex ..< parserError.input.endIndex
+			)
 			XCTAssertEqual(parserError.line, 2)
 			XCTAssertEqual(parserError.column, 20)
 		}
@@ -195,6 +227,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .unterminatedListValue)
 			XCTAssertEqual(parserError.errorRange, fragment.range(of: "["))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.range(of: "fragment Fragment on Customer {\n    customers(first:[) {")
+			)
 			XCTAssertEqual(parserError.line, 2)
 			XCTAssertEqual(parserError.column, 22)
 		}
@@ -213,6 +249,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .unterminatedObjectValue)
 			XCTAssertEqual(parserError.errorRange, fragment[fragment.range(of: "{")!.upperBound ..< fragment.endIndex].range(of: "{"))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.range(of: "fragment Fragment on Customer {\n    customers(first:{) {")
+			)
 			XCTAssertEqual(parserError.line, 2)
 			XCTAssertEqual(parserError.column, 22)
 		}
@@ -228,6 +268,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .missingObjectValue)
 			XCTAssertEqual(parserError.errorRange, fragment.range(of: "one"))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.startIndex ..< parserError.input.endIndex
+			)
 			XCTAssertEqual(parserError.line, 2)
 			XCTAssertEqual(parserError.column, 27)
 		}
@@ -244,6 +288,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .missingDirectiveName)
 			XCTAssertEqual(parserError.errorRange, fragment.range(of: "@"))
 			XCTAssertEqual(parserError.input, fragment)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.startIndex ..< parserError.input.endIndex
+			)
 			XCTAssertEqual(parserError.line, 2)
 			XCTAssertEqual(parserError.column, 12)
 		}
@@ -258,6 +306,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .unterminatedVariableDefinitionList)
 			XCTAssertEqual(parserError.errorRange, query.range(of: "("))
 			XCTAssertEqual(parserError.input, query)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.startIndex ..< parserError.input.endIndex
+			)
 			XCTAssertEqual(parserError.line, 1)
 			XCTAssertEqual(parserError.column, 13)
 		}
@@ -272,6 +324,10 @@ class ParserTests: XCTestCase {
 			XCTAssertEqual(parserError.type, .missingVariableType)
 			XCTAssertEqual(parserError.errorRange, query.range(of: "$"))
 			XCTAssertEqual(parserError.input, query)
+			XCTAssertEqual(
+				parserError.contextualStart ..< parserError.contextualEnd,
+				parserError.input.startIndex ..< parserError.input.endIndex
+			)
 			XCTAssertEqual(parserError.line, 1)
 			XCTAssertEqual(parserError.column, 14)
 		}

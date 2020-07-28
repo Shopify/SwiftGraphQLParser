@@ -103,6 +103,20 @@ private struct InternalParserError: Error {
 	let errorRange: Range<String.Index>
 	let contextualStart: String.Index
 	let contextualEnd: String.Index
+	
+	init(
+		type: ParserErrorType,
+		start: ArraySlice<Token>,
+		contextualStart: String.Index,
+		slice: ArraySlice<Token>
+	) {
+		precondition(!start.isEmpty)
+		
+		self.type = type
+		self.errorRange = start.first!.range
+		self.contextualStart = contextualStart
+		self.contextualEnd = slice.first?.range.upperBound ?? start.last!.range.upperBound
+	}
 }
 
 public func parse(_ input: String) throws -> Document {
@@ -114,7 +128,6 @@ public func parse(_ input: String) throws -> Document {
 			definitions.append(definition)
 		}
 	} catch let error as InternalParserError {
-		print(ParserError(type: error.type, errorRange: error.errorRange, input: input, contextualStart: error.contextualStart, contextualEnd: error.contextualEnd).errorDescription!)
 		throw ParserError(type: error.type, errorRange: error.errorRange, input: input, contextualStart: error.contextualStart, contextualEnd: error.contextualEnd)
 	}
 	
@@ -159,17 +172,17 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard let name = readFragmentName() else {
-			throw InternalParserError(type: .missingFragmentName, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .missingFragmentName, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		guard let typeCondition = readTypeCondition() else {
-			throw InternalParserError(type: .missingTypeCondition, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .missingTypeCondition, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		let directives = try readDirectives(startIndex: startIndex)
 		
 		guard let selectionSet = try readSelectionSet(startIndex: startIndex) else {
-			throw InternalParserError(type: .missingSelectionSet, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .missingSelectionSet, start: start, contextualStart: startIndex, slice: self)
 		}
 		return FragmentDefinition(fragmentName: name, typeCondition: typeCondition, directives: directives, selectionSet: selectionSet)
 	}
@@ -212,11 +225,11 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard selections.isEmpty == false else {
-			throw InternalParserError(type: .emptySelectionSet, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .emptySelectionSet, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		guard self.popFirst()?.type == .rightCurlyBrace else {
-			throw InternalParserError(type: .unterminatedSelectionSet, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .unterminatedSelectionSet, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		return selections
@@ -292,11 +305,11 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard arguments.isEmpty == false else {
-			throw InternalParserError(type: .emptyArgumentList, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .emptyArgumentList, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		guard self.popFirst()?.type == TokenType.rightParentheses else {
-			throw InternalParserError(type: .unterminatedArgumentList, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .unterminatedArgumentList, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		return arguments
@@ -312,7 +325,7 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard let value = try self.readValue(startIndex: startIndex) else {
-			throw InternalParserError(type: .missingArgumentValue, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .missingArgumentValue, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		return Argument(name: name, value: value)
@@ -384,7 +397,7 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard self.popFirst()?.type == TokenType.rightSquareBracket else {
-			throw InternalParserError(type: .unterminatedListValue, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .unterminatedListValue, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		return values
@@ -404,7 +417,7 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard self.popFirst()?.type == TokenType.rightCurlyBrace else {
-			throw InternalParserError(type: .unterminatedObjectValue, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .unterminatedObjectValue, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		return objectFields
@@ -420,7 +433,7 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard let value = try self.readValue(startIndex: startIndex) else {
-			throw InternalParserError(type: .missingObjectValue, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .missingObjectValue, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		return ObjectField(name: name, value: value)
@@ -445,7 +458,7 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard let name = self.readName() else {
-			throw InternalParserError(type: .missingDirectiveName, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .missingDirectiveName, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		let arguments = try self.readArguments(startIndex: startIndex)
@@ -498,7 +511,7 @@ private extension ArraySlice where Element == Token {
 		let directives = try readDirectives(startIndex: startIndex)
 		
 		guard let selectionSet = try readSelectionSet(startIndex: startIndex) else {
-			throw InternalParserError(type: .missingSelectionSet, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .missingSelectionSet, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		return Operation(operationType: operationType, name: name, variableDefinitions: variableDefinitions, directives: directives, selectionSet: selectionSet)
@@ -533,11 +546,11 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard variableDefinitions.isEmpty == false else {
-			throw InternalParserError(type: .emptyVariableDefinitionList, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .emptyVariableDefinitionList, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		guard self.popFirst()?.type == TokenType.rightParentheses else {
-			throw InternalParserError(type: .unterminatedVariableDefinitionList, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .unterminatedVariableDefinitionList, start: start, contextualStart: startIndex, slice: self)
 		}
 		
 		return variableDefinitions
@@ -553,7 +566,7 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		guard let type = readType() else {
-			throw InternalParserError(type: .missingVariableType, errorRange: start.first!.range, contextualStart: startIndex, contextualEnd: self.first?.range.upperBound ?? start.last!.range.upperBound)
+			throw InternalParserError(type: .missingVariableType, start: start, contextualStart: startIndex, slice: self)
 		}
 
 		let defaultValue = try readDefaultValue(startIndex: startIndex)

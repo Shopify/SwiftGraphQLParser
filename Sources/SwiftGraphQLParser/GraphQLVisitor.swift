@@ -73,13 +73,23 @@ public class GraphQLTraverser {
 			try traverseVariableDefinitions(definitions: variableDefinitions)
 		}
 		try traverseDirectives(directives: operation.directives)
-		try traverseSelectionSet(selectionSet: operation.selectionSet)
+		if operation.operationType == .subscription {
+			
+		}
+		try traverseSelectionSet(selectionSet: operation.selectionSet, addTypename: operation.operationType != OperationType.subscription)
 		
 		try visitor.exitOperation(operation: operation)
 	}
 	
-	func traverseSelectionSet(selectionSet: [Selection]) throws {
+	func traverseSelectionSet(selectionSet: [Selection], addTypename: Bool = false) throws {
 		try visitor.visitSelectionSet(selectionSet: selectionSet)
+		
+		var selectionSet = selectionSet
+		if addTypename {
+			if !selectionSet.contains(typenameSelection) {
+				selectionSet.insert(typenameSelection, at: 0)
+			}
+		}
 		
 		for selection in selectionSet {
 			switch selection {

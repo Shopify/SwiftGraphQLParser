@@ -219,7 +219,7 @@ private extension ArraySlice where Element == Token {
 			return nil
 		}
 		
-		var selections: [Selection] = []
+		var selections: [Selection] = [typenameSelection]
 		while let selection = try readSelection(startIndex: startIndex) {
 			selections.append(selection)
 		}

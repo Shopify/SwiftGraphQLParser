@@ -47,7 +47,25 @@ public struct Field: Equatable {
 	public let arguments: [Argument]
 	public let directives: [Directive]
 	public let selectionSet: [Selection]?
+
+	public init(alias: String?, name: String, arguments: [Argument], directives: [Directive], selectionSet: [Selection]?) {
+		self.alias = alias
+		self.name = name
+		self.arguments = arguments
+		self.directives = directives
+		self.selectionSet = selectionSet
+	}
 }
+
+let typenameField = SwiftGraphQLParser.Field(
+	alias: nil,
+	name: "__typename",
+	arguments: [],
+	directives: [],
+	selectionSet: nil
+)
+
+let typenameSelection = SwiftGraphQLParser.Selection.field(typenameField)
 
 public struct Argument: Equatable {
 	public let name: String

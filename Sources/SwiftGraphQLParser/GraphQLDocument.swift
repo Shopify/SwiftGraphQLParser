@@ -39,6 +39,16 @@ public enum Selection: Equatable {
 	case field(Field)
 	case fragmentSpread(FragmentSpread)
 	case inlineFragment(InlineFragment)
+	
+	static let typename = Selection.field(
+		Field(
+			alias: nil,
+			name: "__typename",
+			arguments: [],
+			directives: [],
+			selectionSet: nil
+		)
+	)
 }
 
 public struct Field: Equatable {

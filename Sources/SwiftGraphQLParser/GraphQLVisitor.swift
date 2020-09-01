@@ -61,7 +61,7 @@ public class GraphQLTraverser {
 		
 		try traverseTypeCondition(typeCondition: definition.typeCondition)
 		try traverseDirectives(directives: definition.directives)
-		try traverseSelectionSet(selectionSet: definition.selectionSet)
+		try traverseSelectionSet(selectionSet: definition.selectionSet, addTypename: true)
 		
 		try visitor.exitFragmentDefinition(fragmentDefinition: definition)
 	}
@@ -73,13 +73,23 @@ public class GraphQLTraverser {
 			try traverseVariableDefinitions(definitions: variableDefinitions)
 		}
 		try traverseDirectives(directives: operation.directives)
-		try traverseSelectionSet(selectionSet: operation.selectionSet)
+		if operation.operationType == .subscription {
+			
+		}
+		try traverseSelectionSet(selectionSet: operation.selectionSet, addTypename: operation.operationType != OperationType.subscription)
 		
 		try visitor.exitOperation(operation: operation)
 	}
 	
-	func traverseSelectionSet(selectionSet: [Selection]) throws {
+	func traverseSelectionSet(selectionSet: [Selection], addTypename: Bool = false) throws {
 		try visitor.visitSelectionSet(selectionSet: selectionSet)
+		
+		var selectionSet = selectionSet
+		if addTypename && !selectionSet.isEmpty {
+			if !selectionSet.contains(Selection.typename) {
+				selectionSet.insert(Selection.typename, at: 0)
+			}
+		}
 		
 		for selection in selectionSet {
 			switch selection {
@@ -144,7 +154,7 @@ public class GraphQLTraverser {
 		try traverseArguments(arguments: field.arguments)
 		try traverseDirectives(directives: field.directives)
 		if let selectionSet = field.selectionSet {
-			try traverseSelectionSet(selectionSet: selectionSet)
+			try traverseSelectionSet(selectionSet: selectionSet, addTypename: true)
 		}
 		
 		try visitor.exitField(field: field)
@@ -165,7 +175,7 @@ public class GraphQLTraverser {
 			try traverseTypeCondition(typeCondition: typeCondition)
 		}
 		try traverseDirectives(directives: inlineFragment.directives)
-		try traverseSelectionSet(selectionSet: inlineFragment.selectionSet)
+		try traverseSelectionSet(selectionSet: inlineFragment.selectionSet, addTypename: true)
 		
 		try visitor.exitInlineFragment(inlineFragment: inlineFragment)
 	}

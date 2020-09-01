@@ -154,7 +154,7 @@ private extension ArraySlice where Element == Token {
 	}
 	
 	mutating func readOperationDefinition(startIndex: String.Index) throws -> OperationDefinition? {
-		if let selectionSet = try readSelectionSet(startIndex: startIndex) {
+		if let selectionSet = try readSelectionSet(startIndex: startIndex, addTypename: false) {
 			return .selectionSet(selectionSet)
 		} else if let operation = try readOperation(startIndex: startIndex) {
 			return .operation(operation)
@@ -211,7 +211,7 @@ private extension ArraySlice where Element == Token {
 		return TypeCondition(namedType: type)
 	}
 	
-	mutating func readSelectionSet(startIndex: String.Index) throws -> [Selection]? {
+	mutating func readSelectionSet(startIndex: String.Index, addTypename: Bool = true) throws -> [Selection]? {
 		let start = self
 		
 		guard self.popFirst()?.type == .leftCurlyBrace else {
@@ -220,6 +220,9 @@ private extension ArraySlice where Element == Token {
 		}
 		
 		var selections: [Selection] = []
+		if addTypename {
+			selections.append(typenameSelection)
+		}
 		while let selection = try readSelection(startIndex: startIndex) {
 			selections.append(selection)
 		}

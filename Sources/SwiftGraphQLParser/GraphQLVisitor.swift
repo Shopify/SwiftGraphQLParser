@@ -10,10 +10,20 @@ import Foundation
 public class GraphQLTraverser {
 	let document: Document
 	let visitor: GraphQLBaseVisitor
+	let config: Config
 	
-	public init(document: Document, with visitor: GraphQLBaseVisitor) {
+	public class Config {
+		let prependTypename: Bool
+		
+		public init(prependTypename: Bool = true) {
+			self.prependTypename = prependTypename
+		}
+	}
+	
+	public init(document: Document, config: Config = Config(), with visitor: GraphQLBaseVisitor) {
 		self.document = document
 		self.visitor = visitor
+		self.config = config
 	}
 	
 	public func traverse() throws {
@@ -61,7 +71,7 @@ public class GraphQLTraverser {
 		
 		try traverseTypeCondition(typeCondition: definition.typeCondition)
 		try traverseDirectives(directives: definition.directives)
-		try traverseSelectionSet(selectionSet: definition.selectionSet)
+		try traverseSelectionSet(selectionSet: definition.selectionSet, addTypename: config.prependTypename)
 		
 		try visitor.exitFragmentDefinition(fragmentDefinition: definition)
 	}
@@ -73,13 +83,22 @@ public class GraphQLTraverser {
 			try traverseVariableDefinitions(definitions: variableDefinitions)
 		}
 		try traverseDirectives(directives: operation.directives)
-		try traverseSelectionSet(selectionSet: operation.selectionSet)
+
+		let shouldAddTypename = operation.operationType != OperationType.subscription && config.prependTypename
+		try traverseSelectionSet(selectionSet: operation.selectionSet, addTypename: shouldAddTypename)
 		
 		try visitor.exitOperation(operation: operation)
 	}
 	
-	func traverseSelectionSet(selectionSet: [Selection]) throws {
+	func traverseSelectionSet(selectionSet: [Selection], addTypename: Bool = false) throws {
 		try visitor.visitSelectionSet(selectionSet: selectionSet)
+		
+		var selectionSet = selectionSet
+		if addTypename {
+			if !selectionSet.contains(Selection.field(Field.typename)) {
+				selectionSet.insert(Selection.field(Field.typename), at: 0)
+			}
+		}
 		
 		for selection in selectionSet {
 			switch selection {
@@ -144,7 +163,7 @@ public class GraphQLTraverser {
 		try traverseArguments(arguments: field.arguments)
 		try traverseDirectives(directives: field.directives)
 		if let selectionSet = field.selectionSet {
-			try traverseSelectionSet(selectionSet: selectionSet)
+			try traverseSelectionSet(selectionSet: selectionSet, addTypename: config.prependTypename)
 		}
 		
 		try visitor.exitField(field: field)
@@ -165,7 +184,7 @@ public class GraphQLTraverser {
 			try traverseTypeCondition(typeCondition: typeCondition)
 		}
 		try traverseDirectives(directives: inlineFragment.directives)
-		try traverseSelectionSet(selectionSet: inlineFragment.selectionSet)
+		try traverseSelectionSet(selectionSet: inlineFragment.selectionSet, addTypename: config.prependTypename)
 		
 		try visitor.exitInlineFragment(inlineFragment: inlineFragment)
 	}

@@ -47,6 +47,14 @@ public struct Field: Equatable {
 	public let arguments: [Argument]
 	public let directives: [Directive]
 	public let selectionSet: [Selection]?
+
+	public init(alias: String?, name: String, arguments: [Argument], directives: [Directive], selectionSet: [Selection]?) {
+		this.alias = alias
+		this.name = name
+		this.arguments = arguments
+		this.directives = directives
+		this.selectionSet = selectionSet
+	}
 }
 
 public struct Argument: Equatable {

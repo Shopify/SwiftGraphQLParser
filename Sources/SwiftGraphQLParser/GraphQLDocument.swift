@@ -47,6 +47,14 @@ public struct Field: Equatable {
 	public let arguments: [Argument]
 	public let directives: [Directive]
 	public let selectionSet: [Selection]?
+	
+	static let typename = Field(
+		alias: nil,
+		name: "__typename",
+		arguments: [],
+		directives: [],
+		selectionSet: nil
+	)
 }
 
 public struct Argument: Equatable {
